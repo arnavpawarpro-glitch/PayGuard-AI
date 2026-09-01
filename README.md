@@ -70,27 +70,27 @@ The system generates:
 
 User Transaction
 
-&#x20;      ↓
+     ↓
 
 Transaction Input
 
-&#x20;      ↓
+      ↓
 
 Multi-Factor Risk Engine
 
-&#x20;      ↓
+     ↓
 
 Risk Score (0–100)
 
-&#x20;      ↓
+    ↓
 
 Risk Classification
 
-&#x20;      ↓
+     ↓
 
 AI-Assisted Explanation
 
-&#x20;      ↓
+     ↓
 
 Recommended Action
 
