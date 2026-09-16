@@ -1,408 +1,860 @@
 import streamlit as st
+import random
 from datetime import datetime
+
+# ============================================================
+# PAYGUARD AI
+# AI-ASSISTED TRANSACTION RISK & FRAUD DETECTION
+# ============================================================
 
 st.set_page_config(
     page_title="PayGuard AI",
     page_icon="🛡️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# ============================================================
+# SESSION STATE
+# ============================================================
 
 if "transactions" not in st.session_state:
     st.session_state.transactions = []
 
-
-def generate_ai_explanation(
-    amount,
-    new_device,
-    high_velocity,
-    international,
-    failed_attempts,
-    account_age,
-    risk_score
-):
-    factors = []
-
-    if amount >= 50000:
-        factors.append(
-            "The transaction amount is significantly high, increasing "
-            "the potential financial impact of fraud."
-        )
-
-    if new_device:
-        factors.append(
-            "The payment originated from a new device, which can indicate "
-            "an account takeover or unfamiliar access pattern."
-        )
-
-    if high_velocity:
-        factors.append(
-            "A high transaction frequency was detected. Rapid transactions "
-            "can be associated with automated or fraudulent activity."
-        )
-
-    if international:
-        factors.append(
-            "The transaction is international, adding geographical risk "
-            "to the assessment."
-        )
-
-    if failed_attempts >= 3:
-        factors.append(
-            "Multiple failed payment attempts were recorded before the "
-            "transaction, which increases the risk profile."
-        )
-
-    if account_age <= 30:
-        factors.append(
-            "The account is relatively new, providing limited historical "
-            "behavior for comparison."
-        )
-
-    if risk_score >= 70:
-        summary = (
-            "AI assessment: Multiple risk indicators are present. "
-            "The transaction should undergo additional verification "
-            "before completion."
-        )
-    elif risk_score >= 40:
-        summary = (
-            "AI assessment: Some unusual indicators are present. "
-            "The transaction may be legitimate but should receive "
-            "additional monitoring."
-        )
-    else:
-        summary = (
-            "AI assessment: The available indicators do not show "
-            "significant signs of suspicious activity."
-        )
-
-    return summary, factors
+if "page" not in st.session_state:
+    st.session_state.page = "Dashboard"
 
 
-# HEADER
-st.title("🛡️ PayGuard AI")
-st.markdown("### Intelligent Payment Risk Manager")
+# ============================================================
+# CUSTOM CSS
+# ============================================================
 
-st.write(
-    "Analyze payment transactions using a multi-factor risk engine "
-    "and generate an AI-assisted risk explanation."
-)
+st.markdown("""
+<style>
 
-st.divider()
+.main {
+    background-color: #0b1120;
+}
+
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+h1, h2, h3 {
+    color: white;
+}
+
+p {
+    color: #aeb8c7;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+.card {
+    background: #111827;
+    border: 1px solid #263244;
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 15px;
+}
+
+.metric-card {
+    background: #111827;
+    border: 1px solid #263244;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+}
+
+.metric-number {
+    font-size: 30px;
+    font-weight: 700;
+    color: white;
+}
+
+.metric-label {
+    font-size: 14px;
+    color: #9ca3af;
+}
+
+.tech-card {
+    background: #111827;
+    border: 1px solid #263244;
+    border-radius: 14px;
+    padding: 20px;
+    min-height: 150px;
+}
+
+.risk-high {
+    background: #3b1118;
+    border: 1px solid #ef4444;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.risk-medium {
+    background: #3b2a0b;
+    border: 1px solid #f59e0b;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.risk-low {
+    background: #0b3323;
+    border: 1px solid #22c55e;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 
+# ============================================================
 # SIDEBAR
+# ============================================================
+
 with st.sidebar:
-    st.header("🛡️ PayGuard AI")
 
-    st.write("Payment Risk Intelligence")
+    st.markdown("# 🛡️ PayGuard AI")
 
-    st.divider()
-
-    st.write("### Detection Signals")
-
-    st.write("• Transaction amount")
-    st.write("• Device behavior")
-    st.write("• Transaction velocity")
-    st.write("• Geographic risk")
-    st.write("• Failed payment attempts")
-    st.write("• Account age")
+    st.caption("AI-Assisted Transaction Risk Detection")
 
     st.divider()
 
-    st.caption(
-        "Prototype for demonstration purposes."
+    page = st.radio(
+        "Navigation",
+        [
+            "Dashboard",
+            "Analyze Transaction",
+            "Transaction History",
+            "Analytics",
+            "About"
+        ]
     )
 
+    st.session_state.page = page
 
-# INPUTS
-st.header("💳 Transaction Analysis")
+    st.divider()
 
-col1, col2 = st.columns(2)
+    st.markdown("### System Status")
 
-with col1:
+    st.success("Risk Engine Online")
 
-    amount = st.number_input(
-        "Transaction Amount (₹)",
-        min_value=1.0,
-        value=5000.0,
-        step=500.0
-    )
-
-    account_age = st.number_input(
-        "Account Age (days)",
-        min_value=1,
-        value=365
-    )
-
-    failed_attempts = st.number_input(
-        "Previous Failed Payment Attempts",
-        min_value=0,
-        max_value=20,
-        value=0
-    )
+    st.caption("PayGuard AI v1.0")
 
 
-with col2:
+# ============================================================
+# RISK ENGINE
+# ============================================================
 
-    new_device = st.checkbox(
-        "📱 New Device"
-    )
-
-    high_velocity = st.checkbox(
-        "⚡ High Transaction Frequency"
-    )
-
-    international = st.checkbox(
-        "🌍 International Transaction"
-    )
-
-
-st.divider()
-
-
-# ANALYSIS
-if st.button(
-    "🔍 Analyze Transaction",
-    use_container_width=True
+def calculate_risk(
+    amount,
+    transaction_count,
+    failed_attempts,
+    new_device,
+    unusual_location,
+    unusual_time,
+    velocity
 ):
 
-    risk_score = 0
-    reasons = []
+    score = 0
+    signals = []
 
     # Amount
-    if amount >= 50000:
-        risk_score += 30
-        reasons.append("Very high transaction amount")
+    if amount >= 100000:
+        score += 25
+        signals.append("Very high transaction amount")
+
+    elif amount >= 50000:
+        score += 18
+        signals.append("High transaction amount")
 
     elif amount >= 20000:
-        risk_score += 15
-        reasons.append("Higher-than-normal transaction amount")
+        score += 10
+        signals.append("Elevated transaction amount")
 
-    # New device
-    if new_device:
-        risk_score += 20
-        reasons.append("New device detected")
+    # Failed attempts
+    if failed_attempts >= 5:
+        score += 25
+        signals.append("Multiple failed attempts")
 
-    # Velocity
-    if high_velocity:
-        risk_score += 25
-        reasons.append("High transaction frequency")
-
-    # International
-    if international:
-        risk_score += 10
-        reasons.append("International transaction")
-
-    # Failed payments
-    if failed_attempts >= 3:
-        risk_score += 15
-        reasons.append("Multiple failed payment attempts")
+    elif failed_attempts >= 3:
+        score += 15
+        signals.append("Repeated failed attempts")
 
     elif failed_attempts >= 1:
-        risk_score += 5
-        reasons.append("Previous failed payment attempt")
+        score += 5
+        signals.append("Previous failed attempt")
 
-    # Account age
-    if account_age <= 30:
-        risk_score += 15
-        reasons.append("Very new account")
+    # Device
+    if new_device:
+        score += 15
+        signals.append("New or unrecognized device")
 
-    risk_score = min(risk_score, 100)
+    # Location
+    if unusual_location:
+        score += 15
+        signals.append("Unusual transaction location")
+
+    # Time
+    if unusual_time:
+        score += 10
+        signals.append("Unusual transaction time")
+
+    # Velocity
+    if velocity >= 10:
+        score += 20
+        signals.append("High transaction velocity")
+
+    elif velocity >= 5:
+        score += 10
+        signals.append("Elevated transaction velocity")
+
+    # Transaction count
+    if transaction_count >= 20:
+        score += 10
+        signals.append("High transaction frequency")
+
+    score = min(score, 100)
+
+    if score >= 70:
+        level = "HIGH"
+        action = "Block or manually review transaction."
+
+    elif score >= 40:
+        level = "MEDIUM"
+        action = "Request additional verification."
+
+    else:
+        level = "LOW"
+        action = "Allow transaction with normal monitoring."
+
+    return score, level, signals, action
 
 
-    # RISK LEVEL
-    if risk_score >= 70:
+# ============================================================
+# DASHBOARD
+# ============================================================
 
-        risk_level = "HIGH RISK"
+if page == "Dashboard":
 
-        recommendation = (
-            "Temporarily hold the transaction and request "
-            "additional verification."
+    st.title("🛡️ PayGuard AI")
+
+    st.markdown(
+        "### AI-Assisted Transaction Risk & Fraud Detection"
+    )
+
+    st.write(
+        "PayGuard AI evaluates multiple transaction signals "
+        "and converts them into an interpretable risk score."
+    )
+
+    transactions = st.session_state.transactions
+
+    total = len(transactions)
+
+    high = sum(
+        1 for t in transactions
+        if t["level"] == "HIGH"
+    )
+
+    medium = sum(
+        1 for t in transactions
+        if t["level"] == "MEDIUM"
+    )
+
+    low = sum(
+        1 for t in transactions
+        if t["level"] == "LOW"
+    )
+
+    st.markdown(
+        '<div class="section-title">Risk Overview</div>',
+        unsafe_allow_html=True
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(
+            f"""
+            <div class="metric-card">
+                <div class="metric-number">{total}</div>
+                <div class="metric-label">Transactions</div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-    elif risk_score >= 40:
-
-        risk_level = "MEDIUM RISK"
-
-        recommendation = (
-            "Allow the transaction with additional monitoring "
-            "and verification."
+    with c2:
+        st.markdown(
+            f"""
+            <div class="metric-card">
+                <div class="metric-number">{high}</div>
+                <div class="metric-label">High Risk</div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
+
+    with c3:
+        st.markdown(
+            f"""
+            <div class="metric-card">
+                <div class="metric-number">{medium}</div>
+                <div class="metric-label">Medium Risk</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with c4:
+        st.markdown(
+            f"""
+            <div class="metric-card">
+                <div class="metric-number">{low}</div>
+                <div class="metric-label">Low Risk</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown(
+        '<div class="section-title">How PayGuard AI Works</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown("""
+    <div class="card">
+
+    <p>
+    PayGuard AI uses multiple transaction signals instead of
+    relying on a single indicator.
+    </p>
+
+    <p>
+    The system evaluates transaction amount, failed attempts,
+    device information, location, transaction time and velocity.
+    </p>
+
+    <p>
+    These signals are combined into a risk score from 0 to 100.
+    The score is then converted into a risk classification and
+    recommended action.
+    </p>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Detection Architecture</div>',
+        unsafe_allow_html=True
+    )
+
+    st.code("""
+Transaction
+     ↓
+Risk Signals
+     ↓
+Multi-Factor Risk Engine
+     ↓
+Risk Score (0–100)
+     ↓
+Risk Classification
+     ↓
+AI-Assisted Explanation
+     ↓
+Recommended Action
+""")
+
+    st.markdown(
+        '<div class="section-title">Recent Transactions</div>',
+        unsafe_allow_html=True
+    )
+
+    if transactions:
+
+        for transaction in transactions[-5:][::-1]:
+
+            if transaction["level"] == "HIGH":
+                st.error(
+                    f"🔴 HIGH | ₹{transaction['amount']:,.2f} | "
+                    f"Risk Score: {transaction['score']}"
+                )
+
+            elif transaction["level"] == "MEDIUM":
+                st.warning(
+                    f"🟠 MEDIUM | ₹{transaction['amount']:,.2f} | "
+                    f"Risk Score: {transaction['score']}"
+                )
+
+            else:
+                st.success(
+                    f"🟢 LOW | ₹{transaction['amount']:,.2f} | "
+                    f"Risk Score: {transaction['score']}"
+                )
 
     else:
 
-        risk_level = "LOW RISK"
-
-        recommendation = (
-            "Proceed with standard monitoring."
+        st.info(
+            "No transactions analyzed yet. "
+            "Go to 'Analyze Transaction' to test PayGuard AI."
         )
 
 
-    # AI EXPLANATION
-    ai_summary, ai_factors = generate_ai_explanation(
-        amount,
-        new_device,
-        high_velocity,
-        international,
-        failed_attempts,
-        account_age,
-        risk_score
+# ============================================================
+# ANALYZE TRANSACTION
+# ============================================================
+
+elif page == "Analyze Transaction":
+
+    st.title("🔍 Analyze Transaction")
+
+    st.write(
+        "Enter transaction characteristics to evaluate fraud risk."
     )
 
-
-    # SAVE TRANSACTION
-    transaction = {
-        "time": datetime.now().strftime("%H:%M:%S"),
-        "amount": amount,
-        "score": risk_score,
-        "risk": risk_level
-    }
-
-    st.session_state.transactions.insert(
-        0,
-        transaction
+    st.markdown(
+        '<div class="section-title">Transaction Details</div>',
+        unsafe_allow_html=True
     )
 
-    st.session_state.transactions = (
-        st.session_state.transactions[:10]
-    )
+    c1, c2 = st.columns(2)
 
+    with c1:
 
-    # RESULTS
+        amount = st.number_input(
+            "Transaction Amount (₹)",
+            min_value=1.0,
+            value=5000.0,
+            step=500.0
+        )
+
+        transaction_count = st.number_input(
+            "Transactions in Recent Period",
+            min_value=1,
+            value=2,
+            step=1
+        )
+
+        failed_attempts = st.number_input(
+            "Failed Attempts",
+            min_value=0,
+            value=0,
+            step=1
+        )
+
+        velocity = st.number_input(
+            "Transactions in Last Hour",
+            min_value=1,
+            value=1,
+            step=1
+        )
+
+    with c2:
+
+        new_device = st.checkbox(
+            "New / Unrecognized Device"
+        )
+
+        unusual_location = st.checkbox(
+            "Unusual Location"
+        )
+
+        unusual_time = st.checkbox(
+            "Unusual Transaction Time"
+        )
+
     st.divider()
 
-    st.header("📊 Risk Assessment")
+    if st.button(
+        "🛡️ Analyze Transaction",
+        use_container_width=True
+    ):
 
-    metric1, metric2, metric3 = st.columns(3)
-
-    with metric1:
-        st.metric(
-            "Risk Score",
-            f"{risk_score}/100"
+        score, level, signals, action = calculate_risk(
+            amount,
+            transaction_count,
+            failed_attempts,
+            new_device,
+            unusual_location,
+            unusual_time,
+            velocity
         )
 
-    with metric2:
-        st.metric(
-            "Risk Level",
-            risk_level
+        transaction = {
+            "id": f"TXN-{random.randint(100000, 999999)}",
+            "amount": amount,
+            "score": score,
+            "level": level,
+            "signals": signals,
+            "action": action,
+            "time": datetime.now().strftime(
+                "%d-%m-%Y %H:%M:%S"
+            )
+        }
+
+        st.session_state.transactions.append(transaction)
+
+        st.markdown(
+            '<div class="section-title">Risk Assessment</div>',
+            unsafe_allow_html=True
         )
 
-    with metric3:
-        st.metric(
-            "Transaction",
-            f"₹{amount:,.0f}"
-        )
+        c1, c2, c3 = st.columns(3)
 
-
-    st.progress(
-        risk_score / 100
-    )
-
-
-    if risk_score >= 70:
-        st.error(
-            "🚨 HIGH RISK TRANSACTION DETECTED"
-        )
-
-    elif risk_score >= 40:
-        st.warning(
-            "⚠️ MEDIUM RISK TRANSACTION"
-        )
-
-    else:
-        st.success(
-            "✅ LOW RISK TRANSACTION"
-        )
-
-
-    # AI EXPLANATION
-    st.header("🤖 AI Risk Explanation")
-
-    st.info(ai_summary)
-
-
-    if ai_factors:
-
-        st.subheader(
-            "Why was this transaction flagged?"
-        )
-
-        for factor in ai_factors:
-            st.write(
-                f"🔹 {factor}"
+        with c1:
+            st.metric(
+                "Risk Score",
+                f"{score}/100"
             )
 
-    else:
-
-        st.success(
-            "No significant suspicious indicators were detected."
-        )
-
-
-    # RISK SIGNALS
-    st.subheader("⚠️ Risk Signals")
-
-    if reasons:
-
-        for reason in reasons:
-            st.write(
-                f"• {reason}"
+        with c2:
+            st.metric(
+                "Classification",
+                level
             )
 
-    else:
+        with c3:
+            st.metric(
+                "Transaction",
+                transaction["id"]
+            )
 
-        st.write(
-            "No major risk signals detected."
-        )
+        if level == "HIGH":
 
+            st.error(
+                "🔴 HIGH RISK — Immediate attention recommended."
+            )
 
-    # RECOMMENDATION
-    st.subheader(
-        "💡 Recommended Action"
-    )
+        elif level == "MEDIUM":
 
-    st.info(
-        recommendation
-    )
-
-
-# HISTORY
-st.divider()
-
-st.header(
-    "📜 Recent Transaction Analysis"
-)
-
-if st.session_state.transactions:
-
-    for tx in st.session_state.transactions:
-
-        if tx["risk"] == "HIGH RISK":
-            icon = "🔴"
-
-        elif tx["risk"] == "MEDIUM RISK":
-            icon = "🟡"
+            st.warning(
+                "🟠 MEDIUM RISK — Additional verification recommended."
+            )
 
         else:
-            icon = "🟢"
 
-        st.write(
-            f"{icon} **{tx['time']}** — "
-            f"₹{tx['amount']:,.0f} — "
-            f"Risk Score: **{tx['score']}/100** — "
-            f"{tx['risk']}"
+            st.success(
+                "🟢 LOW RISK — Transaction can proceed normally."
+            )
+
+        st.markdown(
+            '<div class="section-title">Risk Signals</div>',
+            unsafe_allow_html=True
         )
 
-else:
+        if signals:
 
-    st.caption(
-        "No transactions analyzed yet."
+            for signal in signals:
+                st.write(f"⚠️ {signal}")
+
+        else:
+
+            st.write(
+                "No significant risk signals detected."
+            )
+
+        st.markdown(
+            '<div class="section-title">AI-Assisted Explanation</div>',
+            unsafe_allow_html=True
+        )
+
+        if level == "HIGH":
+
+            explanation = (
+                "The transaction contains multiple risk indicators. "
+                "The combination of elevated risk signals has pushed "
+                "the overall risk score into the high-risk range."
+            )
+
+        elif level == "MEDIUM":
+
+            explanation = (
+                "The transaction contains some potentially unusual "
+                "characteristics. Additional verification can reduce "
+                "the possibility of unauthorized activity."
+            )
+
+        else:
+
+            explanation = (
+                "The transaction does not currently show significant "
+                "risk indicators based on the supplied signals."
+            )
+
+        st.info(explanation)
+
+        st.markdown(
+            '<div class="section-title">Recommended Action</div>',
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            f"""
+            <div class="card">
+                <h3>{action}</h3>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+# ============================================================
+# TRANSACTION HISTORY
+# ============================================================
+
+elif page == "Transaction History":
+
+    st.title("📋 Transaction History")
+
+    transactions = st.session_state.transactions
+
+    if not transactions:
+
+        st.info(
+            "No transactions available yet."
+        )
+
+    else:
+
+        for transaction in transactions[::-1]:
+
+            with st.expander(
+                f"{transaction['id']} — "
+                f"₹{transaction['amount']:,.2f} — "
+                f"{transaction['level']}"
+            ):
+
+                st.write(
+                    f"**Risk Score:** "
+                    f"{transaction['score']}/100"
+                )
+
+                st.write(
+                    f"**Time:** "
+                    f"{transaction['time']}"
+                )
+
+                st.write(
+                    f"**Recommended Action:** "
+                    f"{transaction['action']}"
+                )
+
+                if transaction["signals"]:
+
+                    st.write("**Risk Signals:**")
+
+                    for signal in transaction["signals"]:
+                        st.write(f"- {signal}")
+
+                else:
+
+                    st.write(
+                        "No significant risk signals."
+                    )
+
+
+# ============================================================
+# ANALYTICS
+# ============================================================
+
+elif page == "Analytics":
+
+    st.title("📊 Risk Analytics")
+
+    transactions = st.session_state.transactions
+
+    if not transactions:
+
+        st.info(
+            "Analyze some transactions first to view analytics."
+        )
+
+    else:
+
+        total = len(transactions)
+
+        high = sum(
+            1 for t in transactions
+            if t["level"] == "HIGH"
+        )
+
+        medium = sum(
+            1 for t in transactions
+            if t["level"] == "MEDIUM"
+        )
+
+        low = sum(
+            1 for t in transactions
+            if t["level"] == "LOW"
+        )
+
+        average_score = sum(
+            t["score"] for t in transactions
+        ) / total
+
+        total_value = sum(
+            t["amount"] for t in transactions
+        )
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        with c1:
+            st.metric(
+                "Total Transactions",
+                total
+            )
+
+        with c2:
+            st.metric(
+                "Average Risk Score",
+                f"{average_score:.1f}"
+            )
+
+        with c3:
+            st.metric(
+                "High Risk %",
+                f"{(high / total) * 100:.1f}%"
+            )
+
+        with c4:
+            st.metric(
+                "Transaction Value",
+                f"₹{total_value:,.0f}"
+            )
+
+        st.markdown(
+            '<div class="section-title">Risk Distribution</div>',
+            unsafe_allow_html=True
+        )
+
+        chart_data = {
+            "HIGH": high,
+            "MEDIUM": medium,
+            "LOW": low
+        }
+
+        st.bar_chart(chart_data)
+
+
+# ============================================================
+# ABOUT
+# ============================================================
+
+elif page == "About":
+
+    st.title("ℹ️ About PayGuard AI")
+
+    st.markdown("""
+    <div class="card">
+
+    <h2>What is PayGuard AI?</h2>
+
+    <p>
+    PayGuard AI is an AI-assisted transaction risk detection
+    prototype designed to identify potentially suspicious
+    transactions.
+    </p>
+
+    <p>
+    Instead of presenting only a numerical score, the system
+    explains which signals contributed to the assessment and
+    recommends an appropriate next action.
+    </p>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Detection Architecture</div>',
+        unsafe_allow_html=True
     )
 
+    st.code("""
+Transaction
+     ↓
+Risk Signals
+     ↓
+Multi-Factor Risk Engine
+     ↓
+Risk Score (0–100)
+     ↓
+Risk Classification
+     ↓
+AI-Assisted Explanation
+     ↓
+Recommended Action
+""")
 
-st.divider()
+    st.markdown(
+        '<div class="section-title">Technology</div>',
+        unsafe_allow_html=True
+    )
 
-st.caption(
-    "PayGuard AI • AI-assisted payment risk assessment prototype"
-)
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+
+        st.markdown("""
+        <div class="tech-card">
+
+        <h3>Python</h3>
+
+        <p>
+        Core application and transaction-risk logic.
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+
+        st.markdown("""
+        <div class="tech-card">
+
+        <h3>Streamlit</h3>
+
+        <p>
+        Interactive dashboard and application interface.
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c3:
+
+        st.markdown("""
+        <div class="tech-card">
+
+        <h3>Risk Engine</h3>
+
+        <p>
+        Multi-factor transaction risk evaluation.
+        </p>
+
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Project Objective</div>',
+        unsafe_allow_html=True
+    )
+
+    st.write(
+        "The objective of PayGuard AI is to make transaction "
+        "risk easier to understand by combining multiple "
+        "signals into an interpretable risk assessment."
+    )
+
+    st.caption(
+        "PayGuard AI — Prototype for demonstration purposes."
+    )
